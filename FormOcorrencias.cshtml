@@ -1,0 +1,104 @@
+﻿
+    <div class="row">
+
+        <div class="col-xs-12 col-sm-12 col-md-12 col-lg-12 col-xl-12">
+            <div class="card mb-3 d-none" id="formulario">
+                <div class="card-header">
+                    <h3><i class="fa fa-user"></i> Dados</h3>
+                </div>
+
+                <div class="card-body ">
+
+
+                    <form onsubmit="salvarRegistro(this);">
+                        <input type="hidden" name="id" />
+                        <input type="hidden" name="status" />
+                        <input type="hidden" name="fechamento" />
+                        <div class="row">
+
+                            <div class="col-lg-12 col-xl-12">
+
+                                <div class="row">
+                                    <div class="col-lg-3">
+                                        <div class="input-group-sm">
+                                            <label>Início</label>
+                                            <input class="form-control" name="data" type="date" required />
+                                        </div>
+                                    </div>
+                                    <div class="col-lg-5">
+                                        <div class="input-group-sm">
+                                            <label>Boletim de Ocorrência</label>
+                                            <input class="form-control" name="boletimOcorrencia" type="text" required />
+                                        </div>
+                                    </div>
+                                    <div class="col-lg-4">
+                                        <div class="input-group-sm">
+                                            <label>Lote</label>
+                                            <input class="form-control" name="lote" type="text" />
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <div class="row formulario">
+                                    <div class="col-lg-6">
+                                        <div class="input-group-sm">
+                                            <label>Denunciante <a href="#" onclick="IncluirAvulso(1);" title="Incluir" class="fa fa-plus">&nbsp;</a></label>
+                                            @*<input class="form-control" name="idDenunciante" type="text" required />*@
+                                            <select class="form-control form-control-sm" id="ListaDenunciantes" name="idDenunciante" required></select>
+                                        </div>
+                                    </div>
+                                    <div class="col-lg-6">
+                                        <div class="input-group-sm">
+                                            <label>Denunciado <a href="#" onclick="IncluirAvulso(0);" title="Incluir" class="fa fa-plus">&nbsp;</a></label>
+                                            <select class="form-control form-control-sm" id="ListaDenunciados" name="idDenunciado" required></select>
+                                        </div>
+                                    </div>
+                                    @*<div class="col-lg-4">
+                        <div class="input-group-sm">
+                            <label>Fechamento</label>
+                            <input class="form-control" name="fechamento" type="date" />
+                        </div>
+                    </div>*@
+                                </div>
+
+
+                                <div class="row formulario">
+
+                                    <div class="col-lg-8">
+                                        <div class="input-group-sm">
+                                            <label>Produto <a href="#" onclick="IncluirAvulso(2);" title="Incluir" class="fa fa-plus">&nbsp;</a></label>
+                                            <select class="form-control form-control-sm" id="ListaProdutos" name="idProduto" required></select>
+                                        </div>
+                                    </div>
+                                    <div class="col-lg-2">
+                                        <div class="input-group-sm">
+                                            <label>Litros/Kg</label>
+                                            <input class="form-control Litros" name="litros" type="number" required />
+                                        </div>
+                                    </div>
+
+                                    <div class="col-lg-2">
+                                        <div class="input-group-sm">
+                                            <label>Damage</label>
+                                            <input class="form-control Damage" name="damage" type="text" id="valor" required />
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="row">
+                            <div class="col-lg-2">
+                                <button class="btn btn-sm btn-block btn-primary" type="submit" style="margin-top: 20px;">Enviar</button>
+                            </div>
+                            <div class="col-lg-2">
+                                <button class="btn btn-sm btn-block btn-primary" type="button" onclick="LimparDados()" style="margin-top: 20px;">Limpar</button>
+                            </div>
+                            <div class="col-lg-2">
+                                <button class="btn btn-sm btn-block btn-primary" type="button" onclick="fecharFormulario();" style="margin-top: 20px;">Fechar</button>
+                            </div>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>

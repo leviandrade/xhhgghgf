@@ -1,0 +1,63 @@
+﻿<div class="form-Denunciados" style="display:none;">
+    <form onsubmit="SalvarRegistroAvulso(this,0);">
+        <div class="form-group teste">
+            <div class="row">
+
+                <div class="col-lg-12 col-xl-12">
+
+                    <div class="row">
+                        <div class="col-lg-3">
+                            <label>Denunciado</label>
+                            @*<input class="form-control" name="idLocal" type="text" required />*@
+                            <select class="form-control form-control-sm" id="ListaTiposDenunciados" name="idTipoDenunciado"></select>
+                        </div>
+                        <div class="col-lg-9">
+                            <div class="input-group-sm">
+                                <label>Nome</label>
+                                <input class="form-control Nome" name="nome" type="text" required />
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="row formulario">
+                        <div class="col-lg-3">
+                            <div class="input-group-sm">
+                                @*<input class="form-control" name="tipoDocumento" type="text" required />*@
+                                <div class="input-group-sm" name="tipoDocumento">
+                                    <label>Documento</label>
+                                    <select class="form-control" name="tipoDocumento">
+                                        <option value="">--Selecione--</option>
+                                        <option value="0">CNPJ</option>
+                                        <option value="1">CPF</option>
+                                        <option value="2">RG</option>
+                                    </select>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-lg-5">
+                            <div class="input-group-sm">
+                                <label>Número Documento</label>
+                                <input class="form-control NumeroDocumento" name="numeroDocumento" type="text" />
+                            </div>
+                        </div>
+                        <div class="col-lg-4">
+                            <div class="input-group-sm">
+                                <label>Local</label>
+                                @*<input class="form-control" name="idLocal" type="text" required />*@
+                                <select class="form-control form-control-sm" id="ListaLocaisDenunciados" name="idLocal" required></select>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="row">
+            <div class="col-lg-2">
+                <button class="btn btn-sm btn-block btn-primary" type="submit" style="margin-top: 20px;">Enviar</button>
+            </div>
+            <div class="col-lg-2">
+                <button class="btn btn-sm btn-block btn-primary" type="button" onclick="FecharFormularioAvulso();" style="margin-top: 20px;">Fechar</button>
+            </div>
+        </div>
+    </form>
+</div>
