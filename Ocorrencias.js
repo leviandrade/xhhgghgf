@@ -1,22 +1,10 @@
 ﻿var urlPrincipal = servidor.url + "Ocorrencias/"
+var idBaseOcorrencia = 0;
 
-function salvarRegistro(form) {
+function salvarRegistro(form, event) {
     event.preventDefault();
 
-    form = $(form);
-
-    var valores = form.serializeArray();
-    var objeto = {};
-    $.each(valores, function (i, item) {
-        if (item.name == "damage") {
-            var valor = item.value.replace(/\./g, '');
-            valor = valor.replace(',', '.');
-            objeto[item.name] = valor;
-        }
-        else {
-            objeto[item.name] = item.value;
-        }
-    });
+    var objeto = montarObjeto(form);
 
     var metodo = "POST";
     var endereco = urlPrincipal;
@@ -34,55 +22,58 @@ function salvarRegistro(form) {
         endereco = endereco + objeto.id
     }
 
-        $.ajax({
-            url: endereco,
-            type: metodo,
-            data: JSON.stringify(objeto),
-            contentType: 'application/json'
-        })
-            .done(function () {
-                atualizarGrid();
-                LimparDados();
-            })
-            .fail(function (data) {
-                console.log(data);
-            });
-    }
+    var promisse = requisicao(endereco, metodo, objeto);
 
-function LimparDados() {
-    $('#formulario').find("input").val("");
-    $('#formulario').find(".is-invalid").removeClass("is-invalid");
+    promisse.done(function (data) {
+        var id = data.id;
+        var TipoOcorrencia = data.tipoOcorrencia
+        atualizarGrid();
+        LimparDados();
+        sessionStorage.setItem('idOcorrencia', id);
+        sessionStorage.setItem('TipoOcorrencia', TipoOcorrencia);
+
+        if (TipoOcorrencia == 0)
+            window.location.href = "Ocorrencias/FormOcorrenciasFalsificacao";
+
+        else if (TipoOcorrencia == 1)
+            window.location.href = "Ocorrencias/FormOcorrenciasRouboCarga";
+
+        else
+            window.location.href = "Ocorrencias/FormOcorrenciasContrabando";
+
+    });
+
+    promisse.fail(function (data) {
+        console.log(data);
+    });
 }
 
-function Editar(id) {
-    event.preventDefault();
-    abrirFormulario()
-    $.ajax({
-        url: urlPrincipal + id,
-        type: 'GET',
-        contentType: 'application/json'
-    })
-   .done(function (data) {
-        var formulario = $('#formulario').find("form");
-        formulario.data("item", data);
-        if (data.data != null) {
-            data.data = (data.data).replace(/(\d*)-(\d*)-(\d*).*/, '$1-$2-$3');
-        }
-        if (data.fechamento != null) {
-            data.fechamento = (data.fechamento).replace(/(\d*)-(\d*)-(\d*).*/, '$1-$2-$3');
-        }
+function Editar(id, tipoOcorrencia) {
+    sessionStorage.setItem('idOcorrencia', id);
+    sessionStorage.setItem('TipoOcorrencia', TipoOcorrencia);
+    if (tipoOcorrencia == 0)
+        window.location.href = "Ocorrencias/FormOcorrenciasFalsificacao";
 
-        data.damage = data.damage.toLocaleString('pt-BR')
+    else if (tipoOcorrencia == 1)
+        window.location.href = "Ocorrencias/FormOcorrenciasRouboCarga";
 
-        $.each(data, function (prop, valor) {
-            formulario.find("[name=" + prop + "]").val(valor);
-        });
-    })
+    else
+        window.location.href = "Ocorrencias/FormOcorrenciasContrabando";
+}
+
+function FecharSubFormularioAvulsoDenunciantes() {
+    bootbox.hideAll();
+    IncluirDenunciantesAvulso();
+}
+
+function FecharFormularioAvulsoOcorrencias() {
+    $('#FormularioDenunciantes').find(':input').val('')
+    bootbox.hideAll();
 }
 
 function Excluir(id) {
     bootbox.confirm({
-        message: "Deseja realmente excluir este item?",
+        message: "DESEJA REALMENTE EXCLUIR ESTE ITEM?",
         buttons: {
             cancel: {
                 label: 'NÃO',
@@ -98,11 +89,9 @@ function Excluir(id) {
                 return
             }
             else {
-                $.ajax({
-                    url: urlPrincipal + id,
-                    type: 'DELETE',
-                    contentType: 'application/json'
-                }).done(function () {
+                var endereco = urlPrincipal + id;
+                var promisse = requisicao(endereco, 'DELETE');
+                promisse.done(function () {
                     atualizarGrid();
                 })
             }
@@ -112,126 +101,49 @@ function Excluir(id) {
 
 
 function atualizarGrid() {
-    $.ajax({
-        url: urlPrincipal,
-        type: 'GET',
-        contentType: 'application/json'
-    })
-        .done(function (data) {
-            grid.clear();
-            grid.rows.add(data).draw();
-        });
+
+    var promisse = requisicao(urlPrincipal, 'GET');
+
+    promisse.done(function (data) {
+        for (var i = 0; i < data.length; i++) {
+            data[i].damage = data[i].damage.toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
+        }
+        grid.clear();
+        grid.rows.add(data).draw();
+    });
 }
 
 function Finalizar(id) {
     bootbox.confirm({
-    message: "Deseja realmente finalizar este item?",
-    buttons: {
-        cancel: {
-            label: 'NÃO',
-            className: 'btn-danger'
+        message: "DESEJA REALMENTE FINALIZAR ESTE ITEM?",
+        buttons: {
+            cancel: {
+                label: 'NÃO',
+                className: 'btn-danger'
+            },
+            confirm: {
+                label: 'SIM',
+                className: 'btn-success'
+            },
         },
-        confirm: {
-            label: 'SIM',
-            className: 'btn-success'
-        },
-    },
         callback: function (result) {
             if (result == false) {
                 return
             }
             else {
-                $.ajax({
-                    url: urlPrincipal + id + "/FinalizarOcorrencia",
-                    type: 'PUT',
-                    contentType: 'application/json'
-                }).done(function () {
+                var endereco = urlPrincipal + id + "/FinalizarOcorrencia";
+                var promisse = requisicao(endereco, 'PUT');
+                promisse.done(function () {
                     atualizarGrid();
                     LimparDados();
                     $("#finalizado").addClass("finalizar")
                 })
             }
-    }
-});
-}
-
-function PopularCombo() {
-    var Denunciantes = $("#ListaDenunciantes");
-    var Denunciados = $("#ListaDenunciados");
-    var Produtos = $("#ListaProdutos");
-    //$.ajax({
-    //    url: servidor.Url + "Ocorrencias/ListaCombo",
-    //    type: 'GET',
-    //    contentType: 'application/json'
-    //})
-    $.get(servidor.urlPrincipal + "ListaCombo").done(function (data) {
-            repopularComboBox(data, Denunciantes, Denunciados, Produtos)
-        });
-}
-
-function repopularComboBox(data, Denunciantes, Denunciados, Produtos) {
-
-
-    for (var i = 0; i < data.length; i++) {
-        if (i == 0) {
-            Denunciantes.append("<option value=" + "" + ">" + "--Selecione--" + "</option>");
-            Denunciados.append("<option value=" + "" + ">" + "--Selecione--" + "</option>");
-            Produtos.append("<option value=" + "" + ">" + "--Selecione--" + "</option>");
         }
-            if (data[i].idDenunciante > 0) {
-
-                Denunciantes.append("<option value=" + data[i].idDenunciante + ">" + data[i].descricaoDenunciante + "</option>");
-            }
-
-            if (data[i].idDenunciado > 0) {
-                Denunciados.append("<option value=" + data[i].idDenunciado + ">" + data[i].descricaoDenunciado + "</option>");
-            }
-
-            if (data[i].idProduto > 0) {
-                Produtos.append("<option value=" + data[i].idProduto + ">" + data[i].descricaoProduto + "</option>");
-            }
-    }
-}
-
-function SalvarRegistroAvulso(form, b) {
-    if (b == 0) {
-        var EnderecoAvulso = servidor.url + "Denunciados/"
-    }
-    if (b == 1) {
-        var EnderecoAvulso = servidor.url + "Denunciantes/"
-    }
-    if (b == 2) {
-        var EnderecoAvulso = servidor.url + "Produtos/"
-    }
-
-    event.preventDefault();
-
-    form = $(form);
-
-    var valores = form.serializeArray();
-
-    var objeto = {};
-
-    $.each(valores, function (i, item) {
-        objeto[item.name] = item.value;
     });
-
-    $.ajax({
-        url: EnderecoAvulso,
-        type: 'POST',
-        data: JSON.stringify(objeto),
-        contentType: 'application/json'
-    })
-        .done(function () {
-            bootbox.hideAll();
-            $("#ListaProdutos").empty();
-            $("#ListaDenunciantes").empty();
-            $("#ListaDenunciados").empty();
-            PopularCombo()
-        })
 }
 
-function incluir() {
+function incluir(event) {
     event.preventDefault();
     $("#TituloFormulario").html("Incluir");
 
@@ -253,129 +165,74 @@ function fecharFormulario() {
 
 function FecharFormularioAvulso() {
     bootbox.hideAll();
-    LimparFormularioAvulso();
 }
 
-function LimparFormularioAvulso(){
-    $("#ListaLocaisDenunciantes").empty();
-    $("#ListaLocaisDenunciados").empty();
-    $("#ListaTiposDenunciantes").empty();
-    $("#ListaTiposDenunciados").empty();
-    $("#ListaCategoriasProdutos").empty();
-    $("#ListaClassesProdutos").empty();
+function IncluirAvulso() {
+    bootbox.dialog({
+        size: 'large',
+        message: $('.form-Locais').html()
+    });
 }
 
-function IncluirAvulso(a) {
-    if (a == 0) {
-        $.get(servidor.url + "Denunciados/ListaCombo/").done(function (data) {
-            repopularSubComboBox(data,a)
-            bootbox.dialog({
-                size: 'large',
-                message: $('.form-Denunciados').html()
-            });
-        });
-    }
 
-    if (a == 1) {
-        $.get(servidor.url + "Denunciantes/ListaCombo").done(function (data) {
-            repopularSubComboBox(data,a)
-            bootbox.dialog({
-                size: 'large',
-                message: $('.form-Denunciantes').html()
-            });
-        });
-    }
+function format(d) {
+    var html = '<table cellpadding="5" cellspacing="0" border="1" style="padding-left:50px;">';
+    //html += '<tr> Denuncias </tr>' ; 
+    for (var i = 0; i < d.subListaOcorrenciasItens.length; i++) {
+        d.subListaOcorrenciasItens[i].damage = d.subListaOcorrenciasItens[i].damage.toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
 
-    if (a == 2) {
-        $.get(servidor.url + "Produtos/ListaCombo").done(function (data) {
-            repopularSubComboBox(data, a)
-            console.log(data)
-            bootbox.dialog({
-                size: 'large',
-                message: $('.form-Produtos').html()
-            });
-        });
-    }
-}
-function repopularSubComboBox(data, a) {
-    LimparFormularioAvulso();
-
-    var ListaLocaisDenunciantes = $("#ListaLocaisDenunciantes");
-    var ListaLocaisDenunciados = $("#ListaLocaisDenunciados");
-    var TiposDenunciantes = $("#ListaTiposDenunciantes");
-    var TiposDenunciados = $("#ListaTiposDenunciados");
-    var CategoriasProdutos = $("#ListaCategoriasProdutos");
-    var ClassesProdutos = $("#ListaClassesProdutos");
-
-    for (var i = 0; i < data.length; i++) {
         if (i == 0) {
-            ListaLocaisDenunciantes.append("<option value=" + "" + ">" + "--Selecione--" + "</option>");
-            ListaLocaisDenunciados.append("<option value=" + "" + ">" + "--Selecione--" + "</option>");
-            TiposDenunciantes.append("<option value=" + "" + ">" + "--Selecione--" + "</option>");
-            TiposDenunciados.append("<option value=" + "" + ">" + "--Selecione--" + "</option>");
-            CategoriasProdutos.append("<option value=" + "" + ">" + "--Selecione--" + "</option>");
-            ClassesProdutos.append("<option value=" + "" + ">" + "--Selecione--" + "</option>");
+            html += '<tr>' +
+                '<td style="background-color:#C1CDCD;font-weight:bold;text-align:center">' + "DENUNCIADOS" + '</td>' +
+                '<td style="background-color:#C1CDCD;font-weight:bold;text-align:center">' + "PRODUTOS" + '</td>' +
+                '<td style="background-color:#C1CDCD;font-weight:bold;text-align:center">' + "LITROS/KG" + '</td>' +
+                '<td style="background-color:#C1CDCD;font-weight:bold;text-align:center">' + "PERDA" + '</td>' +
+                '</tr>';
         }
-        if (a == 0) {
-            if (data[i].idTipoDenunciado > 0) {
-
-                TiposDenunciados.append("<option value=" + data[i].idTipoDenunciado + ">" + data[i].descricaoTipoDenunciado + "</option>");
-            }
-            if (data[i].idLocal > 0) {
-                ListaLocaisDenunciados.append("<option value=" + data[i].idLocal + ">" + data[i].descricaoLocal + "</option>");
-            }
-        }
-
-        if (a == 1) {
-            if (data[i].idTipoDenunciante > 0) {
-
-                TiposDenunciantes.append("<option value=" + data[i].idTipoDenunciante + ">" + data[i].descricaoTipoDenunciante + "</option>");
-            }
-            if (data[i].idLocal > 0) {
-                ListaLocaisDenunciantes.append("<option value=" + data[i].idLocal + ">" + data[i].descricaoLocal + "</option>");
-            }
-        }
-
-        if (a == 2) {
-            if (data[i].idCategoriaProduto > 0) {
-                CategoriasProdutos.append("<option value=" + data[i].idCategoriaProduto + ">" + data[i].descricaoCategoriaProduto + "</option>");
-            }
-
-            if (data[i].idClasseProduto > 0) {
-                ClassesProdutos.append("<option value=" + data[i].idClasseProduto + ">" + data[i].descricaoClasseProduto + "</option>");
-            }
-        }
+        html += '<tr>' +
+            '<td>' + (d.subListaOcorrenciasItens[i].denunciado != null ? d.subListaOcorrenciasItens[i].denunciado : "INDEFINIDO") + '</td>' +
+            '<td>' + (d.subListaOcorrenciasItens[i].produto != null ? d.subListaOcorrenciasItens[i].produto : "INDEFINIDO") + '</td>' +
+            '<td style="text-align:center">' + d.subListaOcorrenciasItens[i].litros + '</td>' +
+            '<td style="text-align:right">' + 'R$ ' + d.subListaOcorrenciasItens[i].damage.toLocaleString('pt-BR') + '</td>' +
+            '</tr>';
     }
+    return html += '</table>';
 }
 
-function IncluirSubAvulso(a) {
-    if (a == 0) {
-            var teste = bootbox.dialog({
-                message: $('.form-SubTiposDenunciantes').html(),
-                closeButton: false
-        });
-        teste.modal('hide');
-    }
-}
+$(document).on('focus', '#ListaTiposDenunciantes', function () {
+    CarregarTiposDenunciantes();
+});
 
-function FecharSubFormularioAvulso() {
-    teste.hideAll();
-}
+$(document).on('focus', '#ListaLocaisDenunciantes', function () {
+    CarregarLocais();
+});
 
 $(document).ready(function () {
-    PopularCombo();
+
+    PopularComboDenunciantesAvulso();
+    PopularComboLocaisAvulso();
     grid = $('#grid').DataTable({
         data: [],
         columns: [
             {
+                "className": 'details-control',
+                "orderable": false,
+                "data": null,
+                "defaultContent": '',
+            },
+            {
                 data: "status",
                 width: "10px",
                 render: function (data) {
-                    if (data == 1) {
-                        var status = '<a href="#" title="Status" class="fa fa-circle" id="statusfinalizado">&nbsp;</a>';
+                    if (data == 0) {
+                        var status = '<a href="#" title="Status" class="fa fa-circle" id="semParecer">&nbsp;</a>';
                     }
-                    else {
-                        var status = '<a href="#" title="Status" class="fa fa-circle" id="status">&nbsp;</a>';
+                    else if (data == 1)
+                    {
+                        var status = '<a href="#" title="Status" class="fa fa-circle" id="andamento">&nbsp;</a>';
+                    }
+                    else if (data == 2) {
+                        var status = '<a href="#" title="Status" class="fa fa-circle" id="concluido">&nbsp;</a>';
                     }
                     data = status + '&nbsp;'
                     return data;
@@ -386,53 +243,109 @@ $(document).ready(function () {
                 width: "45px",
                 render: function (data, type) {
                     if (type === 'display') {
-                        var editar = '<a href="#" title="Editar" onclick="Editar(' + data.id + ');" class="fa fa-pencil">&nbsp;</a>';
+                        var editar = '<a href="#" title="Editar" onclick="Editar(' + data.id + "," + data.tipoOcorrencia + ');" class="fa fa-pencil">&nbsp;</a>';
                         var excluir = '<a href="#" title="Excluir" onclick="Excluir(' + data.id + ');" class="fa fa-remove">&nbsp;</a>';
-                        if (data.status == 1) {
+                        if (data.status == 2) {
                             var finalizar = '<a href="#" title="Finalizar" onclick="" class="fa fa-check finalizado"; id="finalizado">&nbsp;</a>';
                         }
                         else {
                             var finalizar = '<a href="#" title="Finalizar" onclick="Finalizar(' + data.id + ');" class="fa fa-check"; id="finalizado">&nbsp;</a>';
                         }
 
-                        data = editar + '&nbsp;' + excluir + '&nbsp;' + finalizar ;
+                        data = editar + '&nbsp;' + excluir + '&nbsp;' + finalizar;
+
+
                     }
 
                     return data;
                 }
             },
-            { title: "Data", data: "dataOcorrencia", width: "20px", },
-            { title: "Boletim de Ocorrência", data: "boletimOcorrencia"  },
-            { title: "Denunciante", data: "denunciante" },
-            { title: "Denunciado", data: "denunciado" },
-            { title: "Produto", data: "nomeProduto" },
+            { title: "ID", data: "id" },
+            { title: "FONTE GERADORA", data: "denunciante" },
             {
                 data: null,
-                title: "Damage",
+                title: "TIPO DE OCORRENCIA",
+                width: "45px",
+                render: function (data) {
+                    var tipo = data.tipoOcorrencia;
+                    if (tipo == 0)
+                        data = "FALSIFICACAO";
+                    if (tipo == 1)
+                        data = "ROUBO DE CARGA";
+                    if (tipo == 2)
+                        data = "CONTRABANDO";
+                    if (tipo == 3)
+                        data = "DESCAMINHO";
+
+                    return data;
+
+                },
+            },
+            { title: "DATA", data: "dataOcorrencia", width: "20px", "className": "text-center", },
+            { title: "BOLETIM DE OCORRENCIA", data: "boletimOcorrencia" },
+            { title: "LOCAL", data: "localOcorrencia" },
+            { title: "FECHAMENTO", data: "dataFechamento", "className": "text-center", },
+            {
+                data: null,
+                title: "PERDA",
+                "className": "text-right",
                 width: "20px",
                 render: function (data) {
                     var valor = data.damage;
-                    data = 'R$' + ' ' + valor.toLocaleString('pt-BR');
+                    data = valor.toLocaleString('pt-BR');
                     return data
                 }
             },
         ],
         language: {
-            "lengthMenu": "_MENU_ registros por página",
-            "zeroRecords": "Nenhum registro encontrado",
-            "info": "Exibindo _PAGE_ de _PAGES_",
-            "infoEmpty": "Nenhum registro encontrado",
-            "infoFiltered": "(Filtrado de _MAX_ registros)",
-            "search": "Pesquisar:",
+            "lengthMenu": "_MENU_ REGISTROS POR PAGINA",
+            "zeroRecords": "NENHUM REGISTRO ENCONTRADO",
+            "info": "EXIBINDO _PAGE_ DE _PAGES_",
+            "infoEmpty": "NENHUM REGISTRO ENCONTRADO",
+            "infoFiltered": "(FILTRADO DE _MAX_ REGISTROS)",
+            "search": "PESQUISAR:",
+            "sPaginationType": "pagination",
             "paginate": {
-                "first": "Primeiro",
-                "last": "Último",
-                "next": "Próximo",
-                "previous": "Anterior"
+                "first": "PRIMEIRO",
+                "last": "ULTIMO",
+                "next": "PROXIMO",
+                "previous": "ANTERIOR"
             }
         },
-        "pagingType": "full_numbers"
+        "pagingType": "full_numbers",
     });
 
     atualizarGrid();
+
+    $('#grid tbody').on('click', 'td.details-control', function () {
+        var tr = $(this).closest('tr');
+        var row = grid.row(tr);
+
+        if (row.child.isShown()) {
+            row.child.hide();
+            tr.removeClass('shown');
+        }
+        else {
+            row.child(format(row.data())).show();
+            tr.addClass('shown');
+        }
+    });
 });
+
+function SalvarDenuncianteAvulso(form, event) {
+
+    var enderecoAvulso = servidor.url + "Denunciantes/";
+    event.preventDefault();
+
+    var objeto = montarObjeto(form);
+    var promisse = requisicao(enderecoAvulso, 'POST', objeto);
+    promisse.done(function () {
+        successAlert("O CADASTRO FOI SALVO COM SUCESSO");
+        $('#FormularioDenunciantes').find(":input").val("");
+        bootbox.hideAll();
+        adicionarBorda('#FormularioDenunciantes')
+        PopularComboDenunciantesAvulso();
+    })
+}
+
+
