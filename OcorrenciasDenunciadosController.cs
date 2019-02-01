@@ -9,17 +9,16 @@ using Sindiveg.API.BLL;
 namespace Sindiveg.API.Controllers
 {
     [Produces("application/json")]
-    [Route("api/Encaminhamento")]
-    public class EncaminhamentoController : Controller
+    [Route("api/OcorrenciasDenunciados")]
+    public class OcorrenciasDenunciadosController : Controller
     {
-
-        private EncaminhamentoBLL cpBLL;
+        private OcorrenciasDenunciadosBLL oBLL;
         private Handler handler;
 
 
-        public EncaminhamentoController(EncaminhamentoBLL EncaminhamentoBLL, Handler handler)
+        public OcorrenciasDenunciadosController(OcorrenciasDenunciadosBLL ocorrenciasDenunciadosBLL, Handler handler)
         {
-            cpBLL = EncaminhamentoBLL;
+            oBLL = ocorrenciasDenunciadosBLL;
             this.handler = handler;
         }
 
@@ -27,36 +26,35 @@ namespace Sindiveg.API.Controllers
         [HttpGet]
         public IActionResult Get()
         {
-            var lista = handler.Handle(this, cpBLL.Lista);
-            return lista;
+            return handler.Handle(this, oBLL.Lista);
         }
 
         //[Authorize("Bearer")]
         [HttpGet("{id}")]
         public IActionResult Get(int id)
         {
-            return handler.Handle(this, () => cpBLL.Selecionar(id));
+            return handler.Handle(this, () => oBLL.Selecionar(id));
         }
 
         //[Authorize("Bearer")]
         [HttpPost]
-        public IActionResult Post([FromBody]Encaminhamento Encaminhamento)
+        public IActionResult Post([FromBody]OcorrenciasDenunciados OcorrenciaDenunciado)
         {
-            return handler.Handle(this, () => cpBLL.Incluir(Encaminhamento));
+            return handler.Handle(this, () => oBLL.Incluir(OcorrenciaDenunciado));
         }
 
         //[Authorize("Bearer")]
         [HttpPut("{id}")]
-        public IActionResult Put(int id, [FromBody]Encaminhamento Encaminhamento)
+        public IActionResult Put(int id, [FromBody]OcorrenciasDenunciados OcorrenciaDenunciado)
         {
-            return handler.Handle(this, () => cpBLL.Atualizar(id, Encaminhamento));
+            return handler.Handle(this, () => oBLL.Atualizar(id, OcorrenciaDenunciado));
         }
 
         //[Authorize("Bearer")]
         [HttpDelete("{id}")]
         public IActionResult Delete(int id)
         {
-            return handler.Handle(this, () => cpBLL.Excluir(id));
+            return handler.Handle(this, () => oBLL.Excluir(id));
         }
     }
 }

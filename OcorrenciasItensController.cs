@@ -12,17 +12,17 @@ using Sindiveg.API.Models;
 namespace Sindiveg.API.Controllers
 {
     [Produces("application/json")]
-    [Route("api/Ocorrencias")]
-    public class OcorrenciasController : Controller
+    [Route("api/OcorrenciasItens")]
+    public class OcorrenciasItensController : Controller
     {
-        private OcorrenciasBLL oBLL;
+        private OcorrenciasItensBLL oBLL;
         private Handler handler;
         private UserInfo userInfo;
         private IHostingEnvironment _hostingEnvironment;
 
-        public OcorrenciasController(OcorrenciasBLL oBLL, Handler handler, UserInfoBLL uiBLL, IHostingEnvironment environment)
+        public OcorrenciasItensController(OcorrenciasItensBLL ocorrenciasItensBLL, Handler handler,UserInfoBLL uiBLL, IHostingEnvironment environment)
         {
-            this.oBLL = oBLL;
+            oBLL = ocorrenciasItensBLL;
             this.handler = handler;
             userInfo = uiBLL.UserInfo;
             _hostingEnvironment = environment;
@@ -32,7 +32,6 @@ namespace Sindiveg.API.Controllers
         //[HttpGet]
         //public List<List<int>> ListaPermissoes()
         //{
-
         //    if (!userInfo.Sindiveg)
         //    {
         //        var TipoOcorrencia = userInfo.TipoOcorrencia != string.Empty ? Array.ConvertAll(userInfo.TipoOcorrencia.Split(","), int.Parse)
@@ -68,8 +67,9 @@ namespace Sindiveg.API.Controllers
                     : new List<int>();
 
                 EmpresasUsuarios.Add((int)userInfo.idEmpresa);
+
             }
-            return handler.Handle(this, () => oBLL.ListaOcorrencias(userInfo.Sindiveg, EmpresasUsuarios,TipoOcorrencia));
+            return handler.Handle(this, () => oBLL.Lista(userInfo.Sindiveg, EmpresasUsuarios, TipoOcorrencia));
         }
 
         [Authorize("Bearer")]
@@ -88,49 +88,21 @@ namespace Sindiveg.API.Controllers
 
                 EmpresasUsuarios.Add((int)userInfo.idEmpresa);
             }
-            return handler.Handle(this, () => oBLL.Selecionar(id,userInfo.Sindiveg, EmpresasUsuarios, TipoOcorrencia));
+            return handler.Handle(this, () => oBLL.Selecionar(id, userInfo.Sindiveg, EmpresasUsuarios, TipoOcorrencia, _hostingEnvironment.ContentRootPath));
         }
-
-        [Authorize("Bearer")]
-        [HttpPut("{id}/FinalizarOcorrencia")]
-        public IActionResult FinalizarOcorrencia(int id)
-        {
-            var EmpresasUsuarios = new List<int>();
-            var TipoOcorrencia = new List<int>();
-            if (!userInfo.Sindiveg)
-            {
-                TipoOcorrencia = userInfo.TipoOcorrencia != string.Empty ? Array.ConvertAll(userInfo.TipoOcorrencia.Split(","), int.Parse)
-            .ToList() : new List<int>();
-
-                EmpresasUsuarios = userInfo.Empresas != string.Empty ? Array.ConvertAll(userInfo.Empresas.Split(","), int.Parse).ToList()
-                    : new List<int>();
-
-                EmpresasUsuarios.Add((int)userInfo.idEmpresa);
-            }
-            return handler.Handle(this, () => oBLL.FinalizarOcorrencia(id, userInfo.Sindiveg, EmpresasUsuarios, TipoOcorrencia));
-        }
-
-        [Authorize("Bearer")]
-        [HttpPut("{id}/EnviarEmail")]
-        public IActionResult EnviarEmail(int id)
-        {
-            return handler.Handle(this, () => oBLL.EnviarEmail(id, userInfo, _hostingEnvironment.ContentRootPath));
-        }
-
-
 
         [Authorize("Bearer")]
         [HttpPost]
-        public IActionResult Post([FromBody]Ocorrencias Ocorrencia)
+        public IActionResult Post([FromBody]OcorrenciasItens OcorrenciaItem)
         {
-            Ocorrencia.idEmpresa = (int)userInfo.idEmpresa;
-            return handler.Handle(this, () => oBLL.Incluir(Ocorrencia));
-            
+            OcorrenciaItem.idEmpresa = (int)userInfo.idEmpresa;
+            OcorrenciaItem.path = _hostingEnvironment.ContentRootPath;
+            return handler.Handle(this, () => oBLL.Incluir(OcorrenciaItem));
         }
 
         [Authorize("Bearer")]
         [HttpPut("{id}")]
-        public IActionResult Put(int id, [FromBody]Ocorrencias Ocorrencia)
+        public IActionResult Put(int id, [FromBody]OcorrenciasItens OcorrenciaItem)
         {
             var EmpresasUsuarios = new List<int>();
             var TipoOcorrencia = new List<int>();
@@ -144,7 +116,8 @@ namespace Sindiveg.API.Controllers
 
                 EmpresasUsuarios.Add((int)userInfo.idEmpresa);
             }
-            return handler.Handle(this, () => oBLL.Atualizar(id, Ocorrencia, userInfo.Sindiveg, EmpresasUsuarios, TipoOcorrencia));
+
+            return handler.Handle(this, () => oBLL.Atualizar(OcorrenciaItem, userInfo.Sindiveg, EmpresasUsuarios, TipoOcorrencia, _hostingEnvironment.ContentRootPath));
         }
 
         [Authorize("Bearer")]
